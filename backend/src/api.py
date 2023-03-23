@@ -141,6 +141,12 @@ def patch_drinks(payload, id):
 @app.route('/drinks/<id>', methods=['DELETE'])
 @requires_auth('delete:drinks')
 def delete_drink(payload, id):
+    """
+    This method deletes a drink from the db
+    given the drink id
+    it accepts the permission delete:drinks
+    returns error 404 if drink is not found
+    """
     drink = Drink.query.filter(Drink.id == id).one_or_none()
 
     if not drink:
