@@ -31,6 +31,7 @@ def get_token_auth_header():
     returns the token part of the header
     '''
     if 'Authorization' not in request.headers:
+       print("Authorisation header not found")
        raise AuthError({
            'code': 'auth_header_missing',
            'description': 'Authorization header not found.'
@@ -39,36 +40,42 @@ def get_token_auth_header():
     header_parts = auth_header.split(' ')
     # checking that we are using a bearer keyword
     # and that our header has 2 parts (bearer keyword and token)
-    if len(auth_header) != 2:
-       raise AuthError({
-           'code': 'invalid_header',
+    if len(header_parts) != 2:
+        print("Authorisation header is malformed")
+        raise AuthError({
+            'code': 'invalid_header',
             'description': 'Authorization header is malformed.'
             }, 401)
     elif header_parts[0].lower() != 'bearer':
-       raise AuthError({
-           'code': 'invalid_header',
-           'description': 'Authorization header must have bearer keyword'
-       }, 401)
+        print("Authorisation header is missing the bearer keyword")
+        raise AuthError({
+            'code': 'invalid_header',
+            'description': 'Authorization header must have bearer keyword'
+            }, 401)
     return header_parts[1]
 
 def check_permissions(permission, payload):
     '''
     This method checks the token for the required permissions. 
     '''
-    if 'permissions' not in payload:
-      
+
+    # check if the user has a role attached (permission is in the payload)
+    if payload.get('permissions'):
+        user_permissions = payload.get('permissions')
+        # check if the user has the right permissions for this request
+        if permission not in user_permissions:
+            raise AuthError({
+                'code': 'invalid_permissions',
+                'descriptions': 'the user does not have permission for this request'
+            }, 403)
+        else:
+            return True
+    else:
+        # if the user doesn't have a role at all: permission not in the payload
         raise AuthError({
             'code': 'invalid_permissions',
-            'description': 'Permissions not included in JWT.'
-            }, 401)
-
-    if permission not in payload['permissions']:
-        raise AuthError({
-            'code': 'unauthorized',
-            'description': 'Permission not found.'
+            'descriptions': 'iser does not have a role'
         }, 401)
-    return True
-
 
 def verify_decode_jwt(token):
     '''
@@ -86,6 +93,7 @@ def verify_decode_jwt(token):
     unverified_header = jwt.get_unverified_header(token)
     rsa_key = {}
     if 'kid' not in unverified_header:
+        print("Authorisation is malformed - kid not in header")
         raise AuthError(
             {
                 'code': 'invalid_header',
@@ -112,6 +120,7 @@ def verify_decode_jwt(token):
             return payload
 
         except jwt.ExpiredSignatureError:
+            print("Your token has expired")
             raise AuthError(
                 {
                     'code': 'token_expired',
@@ -119,6 +128,7 @@ def verify_decode_jwt(token):
                 }, 401)
 
         except jwt.JWTClaimsError:
+            print("Incorrect claims. Please, check the audience and issuer.")
             raise AuthError(
                 {
                     'code':
@@ -126,7 +136,9 @@ def verify_decode_jwt(token):
                     'description':
                     'Incorrect claims. Please, check the audience and issuer.'
                 }, 401)
-        except Exception:
+        except Exception as e:
+            print(e)
+            
             raise AuthError(
                 {
                     'code': 'invalid_header',

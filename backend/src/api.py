@@ -42,7 +42,7 @@ def get_drinks():
 
 @app.route('/drinks-detail', methods=['GET'])
 @requires_auth('get:drinks-detail')
-def get_drinks_detail(f):
+def get_drinks_detail(payload):
     '''
      it should require the 'get:drinks-detail' permission
     it should contain the drink.long() data representation
@@ -68,7 +68,7 @@ def get_drinks_detail(f):
    
 @app.route('/drinks', methods=['POST'])
 @requires_auth('post:drinks')
-def drinks(f):
+def drinks(payload):
     """
     This method creates a new row in the drinks table
     It should require the post:drinks permission
@@ -80,11 +80,13 @@ def drinks(f):
     """
 
     # data = dict(request.form or request.json or request.data)
-    data = request.data
-    drink = Drink(title=data.get('title'),
-                  recipe=data.get('recipe') if type(data.get('recipe')) == str
-                  else jsonify(data.get('recipe')))
+    data = request.get_json()
+    
     try:
+        recipe = data['recipe']
+        drink = Drink()
+        drink.title = data['title']
+        drink.recipe = json.dumps(recipe)
         drink.insert()
         return jsonify({
             'success': True, 
@@ -100,7 +102,7 @@ def drinks(f):
 
 @app.route('/drinks/<id>', methods=['PATCH'])
 @requires_auth('patch:drinks')
-def patch_drinks(f, id):
+def patch_drinks(payload, id):
     '''
          <id> is the existing model id
         it should respond with a 404 error if <id> is not found
@@ -111,12 +113,17 @@ def patch_drinks(f, id):
         or appropriate status code indicating reason for failure
     '''
     try:
-        data = request.data
+        data = request.get_json()
         drink = Drink.query.filter(Drink.id == id).one_or_none()
         # if we found a drink with the specified if
         if drink:
-            drink.title = data.get('title')
-            drink.recipe = data.get('recipe')
+            title = data.get('title')
+            recipe = data.get('recipe')
+
+            if title:
+                drink.title = title
+            if recipe:
+                drink.recipe = recipe
             drink.update()
             return jsonify({
                 'success': True,
@@ -125,44 +132,31 @@ def patch_drinks(f, id):
         else:
             # if there isn't a drink in the db with the queried id, 
             # throw a not found error 
-            return jsonify({
-                'success': False,
-                'error': 'Drink not found'
-            }), 404
-        
+            abort(404)
     except Exception as e:
         print(e)
         # if we incur in a server error, throw error
-        return jsonify({
-            'success': False,
-            'error': 'An error occurred'
-        }), 500
+        abort(500)
     
 @app.route('/drinks/<id>', methods=['DELETE'])
 @requires_auth('delete:drinks')
-def delete_drinks(f, id):
+def delete_drink(payload, id):
+    drink = Drink.query.filter(Drink.id == id).one_or_none()
+
+    if not drink:
+        # if we can't find a drink with that id, throw 404 error
+        abort(404)
 
     try:
-        drink = Drink.query.filter(Drink.id == id).one_or_none()
-        if drink:
-            drink.delete()
-            return jsonify({
-                'success': True,
-                'drink': id
-            }), 200
-        # if we don't find a drink with the queried id, 
-        # throw a not found error 
-        else:
-            return jsonify({
-                'success': False,
-                'error': 'Drink not found'
-            }), 404
+        # try to delete drink from db
+        drink.delete()
     except Exception as e:
+        # print exception to debug if it fails
         print(e)
-        return jsonify({
-            'success': False,
-            'error': 'An error occurred'
-        }), 500
+        abort(500)
+
+    return jsonify({'success': True, 'delete': id}), 200
+
 
 
 # Error Handling
@@ -194,6 +188,14 @@ def unprocessable(error):
         "error": 400,
         "message": "could not process request"
     }), 400
+
+@app.errorhandler(400)
+def unprocessable(error):
+    return jsonify({
+        "success": False,
+        "error": 500,
+        "message": "internal server error"
+    }), 500
 
 
 @app.errorhandler(AuthError)
