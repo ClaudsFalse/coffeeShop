@@ -30,7 +30,8 @@ def get_drinks():
             'success': True,
             'drinks': [drink.short() for drink in Drink.query.all()]
         }), 200
-    except:
+    except Exception as e:
+        print(e)
         # if unsuccessful, return server error
         return jsonify({
             'success':False,
@@ -55,7 +56,8 @@ def get_drinks_detail(f):
             'success': True,
             'drinks': [drink.long() for drink in Drink.query.all()]
         }), 200
-    except:
+    except Exception as e:
+        print(e)
         return jsonify({
             'sucess': False,
             'error': "An error occured"
@@ -88,7 +90,8 @@ def drinks(f):
             'success': True, 
             'drink': drink.long()
             }), 200
-    except:
+    except Exception as e:
+        print(e)
         return jsonify({
             'success': False,
             'error': "An error occurred"
@@ -127,7 +130,8 @@ def patch_drinks(f, id):
                 'error': 'Drink not found'
             }), 404
         
-    except:
+    except Exception as e:
+        print(e)
         # if we incur in a server error, throw error
         return jsonify({
             'success': False,
@@ -153,7 +157,8 @@ def delete_drinks(f, id):
                 'success': False,
                 'error': 'Drink not found'
             }), 404
-    except:
+    except Exception as e:
+        print(e)
         return jsonify({
             'success': False,
             'error': 'An error occurred'

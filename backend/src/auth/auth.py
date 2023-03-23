@@ -56,6 +56,7 @@ def check_permissions(permission, payload):
     This method checks the token for the required permissions. 
     '''
     if 'permissions' not in payload:
+      
         raise AuthError({
             'code': 'invalid_permissions',
             'description': 'Permissions not included in JWT.'
@@ -69,7 +70,6 @@ def check_permissions(permission, payload):
     return True
 
 
-# !!NOTE urlopen has a common certificate error described here: https://stackoverflow.com/questions/50236117/scraping-ssl-certificate-verify-failed-error-for-http-en-wikipedia-org
 def verify_decode_jwt(token):
     '''
     @INPUTS
