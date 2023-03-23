@@ -26,13 +26,13 @@ def get_drinks():
     # try to query the db for all drinks
     # and return 200 if successful 
     try:
-        return json.dumps({
+        return jsonify({
             'success': True,
             'drinks': [drink.short() for drink in Drink.query.all()]
         }), 200
     except:
         # if unsuccessful, return server error
-        return json.dumps({
+        return jsonify({
             'success':False,
             'error': "There was an error retrieving the drinks"
         }), 500
@@ -51,12 +51,12 @@ def get_drinks_detail(f):
     or appropriate status code indicating reason for failure
     '''
     try:
-        return json.dumps({
+        return jsonify({
             'success': True,
             'drinks': [drink.long() for drink in Drink.query.all()]
         }), 200
     except:
-        return json.dumps({
+        return jsonify({
             'sucess': False,
             'error': "An error occured"
 
@@ -81,15 +81,15 @@ def drinks(f):
     data = request.data
     drink = Drink(title=data.get('title'),
                   recipe=data.get('recipe') if type(data.get('recipe')) == str
-                  else json.dumps(data.get('recipe')))
+                  else jsonify(data.get('recipe')))
     try:
         drink.insert()
-        return json.dumps({
+        return jsonify({
             'success': True, 
             'drink': drink.long()
             }), 200
     except:
-        return json.dumps({
+        return jsonify({
             'success': False,
             'error': "An error occurred"
         }), 500
@@ -115,21 +115,21 @@ def patch_drinks(f, id):
             drink.title = data.get('title')
             drink.recipe = data.get('recipe')
             drink.update()
-            return json.dumps({
+            return jsonify({
                 'success': True,
                 'drinks': [drink.long()]
             }), 200
         else:
             # if there isn't a drink in the db with the queried id, 
             # throw a not found error 
-            return json.dumps({
+            return jsonify({
                 'success': False,
                 'error': 'Drink not found'
             }), 404
         
     except:
         # if we incur in a server error, throw error
-        return json.dumps({
+        return jsonify({
             'success': False,
             'error': 'An error occurred'
         }), 500
@@ -142,19 +142,19 @@ def delete_drinks(f, id):
         drink = Drink.query.filter(Drink.id == id).one_or_none()
         if drink:
             drink.delete()
-            return json.dumps({
+            return jsonify({
                 'success': True,
                 'drink': id
             }), 200
         # if we don't find a drink with the queried id, 
         # throw a not found error 
         else:
-            return json.dumps({
+            return jsonify({
                 'success': False,
                 'error': 'Drink not found'
             }), 404
     except:
-        return json.dumps({
+        return jsonify({
             'success': False,
             'error': 'An error occurred'
         }), 500
