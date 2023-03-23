@@ -22,7 +22,7 @@ class AuthError(Exception):
 
 ## Auth Header
 
-def get_token_auth_header(request):
+def get_token_auth_header():
     '''
     This method attempts to get the header from the request
         it should raise an AuthError if no header is present
